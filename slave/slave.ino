@@ -24,7 +24,7 @@ int numOfDoor = 0;
 uint32_t rebootTimer = millis();
 
 void loop() {
-  if (numOfDoor == 0)
+  if (numOfDoor == -1)
   {
     numOfDoor = Serial.parseInt();
   }
@@ -41,24 +41,25 @@ void loop() {
 
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())  // метка поднесена и читается
   {
-    if (rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 7, &key, &(rfid.uid)) != MFRC522::STATUS_OK)
+    if (rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, ((((numOfDoor / 4) + 1) * 4) - 1), &key, &(rfid.uid))
+        == MFRC522::STATUS_OK)
     {
-      return;
-    }
+      uint8_t dataToWrite[16];
+      for (int i = 0; i < 16; ++i)
+      {
+        dataToWrite[0] = 1;
+      }
 
-    uint8_t dataToWrite[16];
-    for (int i = 0; i < 16; ++i)
-    {
-      dataToWrite[0] = 1;
+      if (rfid.MIFARE_Write(numOfDoor, dataToWrite, 16) != MFRC522::STATUS_OK)
+      {
+        Serial.println("Bad write");
+      }
+      else
+      {
+        Serial.println("Good write");
+        rfid.PICC_HaltA();
+        numOfDoor = -1;
+      }
     }
-
-    if (rfid.MIFARE_Write(6, dataToWrite, 16) != MFRC522::STATUS_OK)
-    {
-      Serial.println("Write error");
-      return;
-    }
-
-    Serial.println("Write OK");
-    rfid.PICC_HaltA();
   }
-}                              
+}
