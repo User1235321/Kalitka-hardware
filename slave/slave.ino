@@ -8,6 +8,8 @@
 MFRC522 rfid(SS_PIN, RST_PIN);
 MFRC522::MIFARE_Key key;
 
+uint32_t rebootTimer = millis();
+
 void setup() {
   Serial.begin(9600);
   SPI.begin();
@@ -42,7 +44,7 @@ void loop() {
       uint8_t dataBlock[18];
       uint8_t size = sizeof(dataBlock);
 
-      if (rfid.MIFARE_Write(number_of_door, dataBlock, &size) == MFRC522::STATUS_OK)
+      if (rfid.MIFARE_Read(number_of_door, dataBlock, &size) == MFRC522::STATUS_OK)
       {
         Serial.println((dataBlock[0] == 1));
         rfid.PICC_HaltA();
