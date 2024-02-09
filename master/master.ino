@@ -43,7 +43,7 @@ void loop()
   }
 
   mode = (mode == 0) ? Serial.parseInt() : mode;
-  if ((mode == 1) || (mode == 2))
+  if ((mode == 3) || (mode == 2))
   {
     numOfDoor = (numOfDoor == 0) ? Serial.parseInt() : numOfDoor;
 
@@ -65,12 +65,9 @@ void loop()
       return;
     }
 
-    if (mode == 1)
+    if (mode == 3)
     {
       //reading
-      Serial.print("Door number ");
-      Serial.print(numOfDoor);
-      Serial.print(" has status: ");
       Serial.println(dataBlock[(numOfDoor % 16)]);
       rfid.PICC_HaltA();                              // Завершаем работу с меткой
       rfid.PCD_StopCrypto1();
@@ -80,20 +77,29 @@ void loop()
     else if (mode == 2)
     {
       //writing
-      dataBlock[numOfDoor % 16] = 1 - dataBlock[numOfDoor % 16];
+      uint8_t doorMode = Serial.parseInt();
+      dataBlock[numOfDoor % 16] = doorMode;
       if (rfid.MIFARE_Write(blockNum, dataBlock, 16) != MFRC522::STATUS_OK)
       {
-        Serial.println("Bad write");
+        Serial.println("0");
       }
       else
       {
-        Serial.print(numOfDoor);
-        Serial.print(" now is ");
-        Serial.println(dataBlock[numOfDoor % 16]);
+        Serial.println(doorMode + numOfDoor + mode);
         rfid.PICC_HaltA();
         mode = 0;
         numOfDoor = 0;
       }
     }
+  }
+  else if (mode == 1)
+  {
+    if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) return; // Can't read cart
+    for (uint8_t i = 0; i < 4; i++)
+    {
+      Serial.print(rfid.uid.uidByte[i], HEX);
+    }
+    Serial.println();
+    mode = 0;
   }
 }
